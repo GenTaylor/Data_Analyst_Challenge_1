@@ -1,0 +1,59 @@
+/*Number of transactions, approvals, and total declines for each day*/
+
+SELECT 
+  Cast(t.date AS date) Dates, 
+  Count(T.return_code) AS Total_Transactions, 
+  Count(
+    CASE WHEN T.return_code = 0 THEN 1 end
+  ) AS Approvals, 
+  Count(
+    CASE WHEN T.return_code > 1 THEN 1 end
+  ) AS Declined 
+FROM 
+  transactions T 
+GROUP BY 
+  Cast(t.date AS date)
+
+
+/*Number of approval codes for each merchant for each day*/
+
+SELECT 
+  T.merchant AS Merchants, 
+  Cast(t.date AS date) Dates, 
+  Count(
+    CASE WHEN T.return_code = 0 THEN 1 end
+  ) AS Approvals 
+FROM 
+  transactions T 
+GROUP BY 
+  Cast(t.date AS date) 
+ORDER BY 
+  T.merchant, 
+  Dates
+
+
+
+/*Total profit for each merchant for each day*/
+
+ALTER TABLE 
+  `repay_db`.`transactions` 
+ADD 
+  COLUMN `profit_nums` DECIMAL(10, 2) NULL 
+AFTER 
+  `return_code`;
+UPDATE 
+  transactions 
+SET 
+  profit_nums = CASE return_code WHEN 0 THEN 0.10 WHEN 1 THEN -0.05 WHEN 21 THEN 0.00 WHEN 36 THEN -0.07 WHEN 40 THEN -0.02 ELSE 0.00 END;
+SELECT 
+  merchant AS Merchants, 
+  Cast(date AS date) Dates, 
+  Sum(profit_nums) AS Daily_Profit 
+FROM 
+  transactions 
+GROUP BY 
+  Cast(date AS date), 
+  merchant 
+ORDER BY 
+  merchant, 
+  dates
